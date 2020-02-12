@@ -8,591 +8,601 @@ var unescape = require("lodash/unescape");
  *
  * @returns {{}}
  */
-module.exports = function (graph) {
+module.exports = function(graph) {
 
-	var ontologyMenu = {},
-		DEFAULT_JSON_NAME = "empty", // This file is loaded by default
-		loadingError = d3.select("#loading-error"),
-		loadingProgress = d3.select("#loading-progress"),
-		ontologyMenuTimeout,
-		emptyGraph=false,
-		fileToLoad,
-		cachedConversions = {},
-		loadOntologyFromText;
-
-
-
-	String.prototype.beginsWith = function (string) {
-		return(this.indexOf(string) === 0);
-	};
-
-	ontologyMenu.setup = function (_loadOntologyFromText) {
-		loadOntologyFromText = _loadOntologyFromText;
-
-		var menuEntry= d3.select("#m_select");
-		menuEntry.on("mouseover",function(){
-			var searchMenu=graph.options().searchMenu();
-			searchMenu.hideSearchEntries();
-		});
-
-		setupConverterButtons();
-		setupUploadButton();
-
-		var descriptionButton = d3.select("#error-description-button").datum({open: false});
-		descriptionButton.on("click", function (data) {
-			var errorContainer = d3.select("#error-description-container");
-			var errorDetailsButton = d3.select(this);
-
-			// toggle the state
-			data.open = !data.open;
-			var descriptionVisible = data.open;
-			if (descriptionVisible) {
-				errorDetailsButton.text("Hide error details");
-			} else {
-				errorDetailsButton.text("Show error details");
-			}
-			errorContainer.classed("hidden", !descriptionVisible);
-		});
-
-		setupUriListener();
-	};
+    var ontologyMenu = {},
+        DEFAULT_JSON_NAME = "empty", // This file is loaded by default
+        loadingError = d3.select("#loading-error"),
+        loadingProgress = d3.select("#loading-progress"),
+        ontologyMenuTimeout,
+        emptyGraph = false,
+        fileToLoad,
+        cachedConversions = {},
+        loadOntologyFromText;
 
 
-	function setupUriListener() {
-		// parse the url initially
-		parseUrlAndLoadOntology();
 
-		// reload ontology when hash parameter gets changed manually
-		d3.select(window).on("hashchange", function () {
-			var oldURL = d3.event.oldURL, newURL = d3.event.newURL;
+    String.prototype.beginsWith = function(string) {
+        return (this.indexOf(string) === 0);
+    };
 
-			if (oldURL !== newURL) {
-				// don't reload when just the hash parameter gets appended
-				if (newURL === oldURL + "#") {
-					return;
-				}
+    ontologyMenu.setup = function(_loadOntologyFromText) {
+        loadOntologyFromText = _loadOntologyFromText;
 
-				updateNavigationHrefs();
-				parseUrlAndLoadOntology();
-			}
-		});
+        var menuEntry = d3.select("#m_select");
+        menuEntry.on("mouseover", function() {
+            var searchMenu = graph.options().searchMenu();
+            searchMenu.hideSearchEntries();
+        });
 
-		updateNavigationHrefs();
-	}
+        setupConverterButtons();
+        setupUploadButton();
 
-	/**
-	 * Quick fix: update all anchor tags that are used as buttons because a click on them
-	 * changes the url and this will load an other ontology.
-	 */
-	function updateNavigationHrefs() {
-		d3.selectAll("#menuElementContainer > li > a").attr("href", location.hash || "#");
+        var descriptionButton = d3.select("#error-description-button").datum({ open: false });
+        descriptionButton.on("click", function(data) {
+            var errorContainer = d3.select("#error-description-container");
+            var errorDetailsButton = d3.select(this);
+
+            // toggle the state
+            data.open = !data.open;
+            var descriptionVisible = data.open;
+            if (descriptionVisible) {
+                errorDetailsButton.text("Hide error details");
+            } else {
+                errorDetailsButton.text("Show error details");
+            }
+            errorContainer.classed("hidden", !descriptionVisible);
+        });
+
+        setupUriListener();
+    };
+
+
+    function setupUriListener() {
+        // parse the url initially
+        parseUrlAndLoadOntology();
+
+        // reload ontology when hash parameter gets changed manually
+        d3.select(window).on("hashchange", function() {
+            var oldURL = d3.event.oldURL,
+                newURL = d3.event.newURL;
+
+            if (oldURL !== newURL) {
+                // don't reload when just the hash parameter gets appended
+                if (newURL === oldURL + "#") {
+                    return;
+                }
+
+                updateNavigationHrefs();
+                parseUrlAndLoadOntology();
+            }
+        });
+        d3.select("#select_store").on("change", function() {
+            updateNavigationHrefsNew(this.value);
+            parseUrlAndLoadOntology();
+        });
+
+        updateNavigationHrefs();
+    }
+
+    /**
+     * Quick fix: update all anchor tags that are used as buttons because a click on them
+     * changes the url and this will load an other ontology.
+     */
+    function updateNavigationHrefs() {
+        d3.selectAll("#menuElementContainer > li > a").attr("href", location.hash || "#");
         d3.selectAll("#showEditorHint").attr("href", location.hash || "#");
-	}
+    }
 
-	ontologyMenu.setIriText=function(text){
-		var iriConverterInput = d3.select("#iri-converter-input");
-		iriConverterInput.node().value=text;
+    function updateNavigationHrefsNew(hashValue) {
+        d3.selectAll("#select_store_link").attr("href", hashValue || "#");
+        d3.selectAll("#showEditorHint").attr("href", hashValue || "#");
+        location.hash = hashValue;
+    }
+    ontologyMenu.setIriText = function(text) {
+        var iriConverterInput = d3.select("#iri-converter-input");
+        iriConverterInput.node().value = text;
 
-		var iriConverterButton = d3.select("#iri-converter-button");
-		iriConverterButton.attr("disabled", false);
-		d3.select("#iri-converter-form").on("submit")();
-	};
+        var iriConverterButton = d3.select("#iri-converter-button");
+        iriConverterButton.attr("disabled", false);
+        d3.select("#iri-converter-form").on("submit")();
+    };
 
-	function parseOptions(optsArray){
-        var defObj=graph.options().defaultConfig();
-		if (optsArray===undefined){
+    function parseOptions(optsArray) {
+        var defObj = graph.options().defaultConfig();
+        if (optsArray === undefined) {
             //graph.options().setOptionsFromURL(defObj);
             return;
-		}
-		// else parse the given parameters;
-		for (var i=0;i<optsArray.length;i++){
-			var keyVal=optsArray[i].split('=');
-            defObj[keyVal[0]]=keyVal[1];
-		}
-		graph.options().setOptionsFromURL(defObj);
-	}
+        }
+        // else parse the given parameters;
+        for (var i = 0; i < optsArray.length; i++) {
+            var keyVal = optsArray[i].split('=');
+            defObj[keyVal[0]] = keyVal[1];
+        }
+        graph.options().setOptionsFromURL(defObj);
+    }
 
-	function parseUrlAndLoadOntology() {
-		// count number of hash parameters
-		var urlString=String(location);
+    function parseUrlAndLoadOntology() {
+        // count number of hash parameters
+        var urlString = String(location);
 
-		var numParameters=(urlString.match(/#/g) || []).length;
-		// create parameters array
-		var paramArray=[];
-		if (numParameters>0){
-            var tokens=urlString.split("#");
+        var numParameters = (urlString.match(/#/g) || []).length;
+        // create parameters array
+        var paramArray = [];
+        if (numParameters > 0) {
+            var tokens = urlString.split("#");
 
             // skip the first token since it is the address of the server
-            for (var i=1;i<tokens.length;i++){
-            	if (tokens[i].length===0){
-            		// this token belongs actually to the last paramArray
-					paramArray[paramArray.length-1]=paramArray[paramArray.length-1]+"#";
-				}else{
-            		paramArray.push(tokens[i]);
-            	}
-			}
-		}
+            for (var i = 1; i < tokens.length; i++) {
+                if (tokens[i].length === 0) {
+                    // this token belongs actually to the last paramArray
+                    paramArray[paramArray.length - 1] = paramArray[paramArray.length - 1] + "#";
+                } else {
+                    paramArray.push(tokens[i]);
+                }
+            }
+        }
         // using paramaters aray now for identification
         var hashParameter;
         var paramlength;
         var givenOptionsStr;
         var optionsArray;
-		var optString="opts=";
-        if (paramArray.length===0){
+        var optString = "opts=";
+        if (paramArray.length === 0) {
             hashParameter = DEFAULT_JSON_NAME;
-            parseOptions();// loads default values
-		}
-        if (paramArray.length===1){
-        	// check if there is only the opts flag
-			if(paramArray[0].indexOf(optString)>=0){
-				// parse the parameters;
-				paramlength=paramArray[0].length;
-				givenOptionsStr=paramArray[0].substr(5,paramlength-6);
-				optionsArray=givenOptionsStr.split(';');
-				parseOptions(optionsArray);
+            parseOptions(); // loads default values
+        }
+        if (paramArray.length === 1) {
+            // check if there is only the opts flag
+            if (paramArray[0].indexOf(optString) >= 0) {
+                // parse the parameters;
+                paramlength = paramArray[0].length;
+                givenOptionsStr = paramArray[0].substr(5, paramlength - 6);
+                optionsArray = givenOptionsStr.split(';');
+                parseOptions(optionsArray);
 
                 hashParameter = DEFAULT_JSON_NAME;
-			}else{
-                hashParameter=paramArray[0];
-                parseOptions();// loads default valuesparseOptions
-			}
+            } else {
+                hashParameter = paramArray[0];
+                parseOptions(); // loads default valuesparseOptions
+            }
 
         }
-        if (paramArray.length===2){
-            if (paramArray[0].indexOf(optString)>=0){
-                paramlength=paramArray[0].length;
-                givenOptionsStr=paramArray[0].substr(5,paramlength-6);
-                optionsArray=givenOptionsStr.split(';');
+        if (paramArray.length === 2) {
+            if (paramArray[0].indexOf(optString) >= 0) {
+                paramlength = paramArray[0].length;
+                givenOptionsStr = paramArray[0].substr(5, paramlength - 6);
+                optionsArray = givenOptionsStr.split(';');
                 parseOptions(optionsArray);
-            }else{
-                parseOptions();// loads default values
-			}
+            } else {
+                parseOptions(); // loads default values
+            }
             hashParameter = paramArray[1];
         }
-		var ontologyOptions = d3.selectAll(".select li").classed("selected-ontology", false);
-		emptyGraph=false;
-		// IRI parameter
-		var iriKey = "iri=";
-		var urlKey = "url=";
-		var fileKey = "file=";
+        var ontologyOptions = d3.selectAll(".select li").classed("selected-ontology", false);
+        emptyGraph = false;
+        // IRI parameter
+        var iriKey = "iri=";
+        var urlKey = "url=";
+        var fileKey = "file=";
 
-		if (hashParameter.substr(0, fileKey.length) === fileKey) {
-			var filename = decodeURIComponent(hashParameter.slice(fileKey.length));
-			loadOntologyFromFile(filename);
+        if (hashParameter.substr(0, fileKey.length) === fileKey) {
+            var filename = decodeURIComponent(hashParameter.slice(fileKey.length));
+            loadOntologyFromFile(filename);
 
-		} else if (hashParameter.substr(0, urlKey.length) === urlKey) {
-			var url = decodeURIComponent(hashParameter.slice(urlKey.length));
-			loadOntologyFromURL("read?json=" + encodeURIComponent(url), url);
+        } else if (hashParameter.substr(0, urlKey.length) === urlKey) {
+            var url = decodeURIComponent(hashParameter.slice(urlKey.length));
+            loadOntologyFromURL("read?json=" + encodeURIComponent(url), url);
 
-		} else if (hashParameter.substr(0, iriKey.length) === iriKey) {
-			var iri = decodeURIComponent(hashParameter.slice(iriKey.length));
-			loadOntologyFromUri("convert?iri=" + encodeURIComponent(iri), iri);
-			d3.select("#converter-option").classed("selected-ontology", true);
+        } else if (hashParameter.substr(0, iriKey.length) === iriKey) {
+            var iri = decodeURIComponent(hashParameter.slice(iriKey.length));
+            loadOntologyFromUri("convert?iri=" + encodeURIComponent(iri), iri);
+            d3.select("#converter-option").classed("selected-ontology", true);
 
-		} else {
-			// id of an existing ontology as parameter
-			loadOntologyFromUri("data/" + hashParameter + ".json", hashParameter);
+        } else {
+            // id of an existing ontology as parameter
+            loadOntologyFromUri("data/" + hashParameter + ".json", hashParameter);
 
-			ontologyOptions.each(function () {
-				var ontologyOption = d3.select(this);
-				if (ontologyOption.select("a").size() > 0) {
+            ontologyOptions.each(function() {
+                var ontologyOption = d3.select(this);
+                if (ontologyOption.select("a").size() > 0) {
 
-					if (ontologyOption.select("a").attr("href") === "#" + hashParameter) {
-						ontologyOption.classed("selected-ontology", true);
-					}
-				}
-			});
-		}
-	}
+                    if (ontologyOption.select("a").attr("href") === "#" + hashParameter) {
+                        ontologyOption.classed("selected-ontology", true);
+                    }
+                }
+            });
+        }
+    }
 
-	function loadOntologyFromURL(relativePath,requestedURL){
-		fileToLoad=requestedURL;
-		var cachedOntology = cachedConversions[relativePath];
-		var trimmedRequestedUri = requestedURL.replace(/\/$/g, "");
-		var filename = trimmedRequestedUri.slice(trimmedRequestedUri.lastIndexOf("/") + 1);
+    function loadOntologyFromURL(relativePath, requestedURL) {
+        fileToLoad = requestedURL;
+        var cachedOntology = cachedConversions[relativePath];
+        var trimmedRequestedUri = requestedURL.replace(/\/$/g, "");
+        var filename = trimmedRequestedUri.slice(trimmedRequestedUri.lastIndexOf("/") + 1);
 
-		// check if requested url is a json;
-		var isJSON=requestedURL.toLowerCase().endsWith(".json");
-		if (!isJSON){
-			ontologyMenu.notValidJsonURL();
-			graph.clearGraphData();
-			return;
-		}
+        // check if requested url is a json;
+        var isJSON = requestedURL.toLowerCase().endsWith(".json");
+        if (!isJSON) {
+            ontologyMenu.notValidJsonURL();
+            graph.clearGraphData();
+            return;
+        }
 
-		if (cachedOntology) {
-			loadOntologyFromText(cachedOntology, undefined, filename);
-			setLoadingStatus(true);
-		} else {
-			displayLoadingIndicators();
-			d3.xhr(relativePath, "application/json", function (error, request) {
-				var loadingSuccessful = !error;
-				var errorInfo;
+        if (cachedOntology) {
+            loadOntologyFromText(cachedOntology, undefined, filename);
+            setLoadingStatus(true);
+        } else {
+            displayLoadingIndicators();
+            d3.xhr(relativePath, "application/json", function(error, request) {
+                var loadingSuccessful = !error;
+                var errorInfo;
 
 
-				// check if error occurred or responseText is empty
-				if ((error!==null && error.status === 500) || (request && request.responseText.length===0)) {
-					hideLoadingInformations();
-					ontologyMenu.notValidJsonURL();
-					cachedConversions[relativePath]=undefined;
-					return;
-				}
-				var jsonText;
-				if (loadingSuccessful) {
-					jsonText = request.responseText;
-					cachedConversions[relativePath] = jsonText;
-				} else {
-					if (error.status === 404) {
-						errorInfo = "Connection to the OWL2VOWL interface could not be established.";
-						graph.clearGraphData();
-					}
-				}
+                // check if error occurred or responseText is empty
+                if ((error !== null && error.status === 500) || (request && request.responseText.length === 0)) {
+                    hideLoadingInformations();
+                    ontologyMenu.notValidJsonURL();
+                    cachedConversions[relativePath] = undefined;
+                    return;
+                }
+                var jsonText;
+                if (loadingSuccessful) {
+                    jsonText = request.responseText;
+                    cachedConversions[relativePath] = jsonText;
+                } else {
+                    if (error.status === 404) {
+                        errorInfo = "Connection to the OWL2VOWL interface could not be established.";
+                        graph.clearGraphData();
+                    }
+                }
 
-				loadOntologyFromText(jsonText, undefined, filename);
-				setLoadingStatus(loadingSuccessful, error ? error.response : undefined, errorInfo);
+                loadOntologyFromText(jsonText, undefined, filename);
+                setLoadingStatus(loadingSuccessful, error ? error.response : undefined, errorInfo);
 
-				if (emptyGraph===true){
-					ontologyMenu.notValidJsonFile();
-					graph.clearGraphData();
-				}
+                if (emptyGraph === true) {
+                    ontologyMenu.notValidJsonFile();
+                    graph.clearGraphData();
+                }
 
-				hideLoadingInformations();
-			});
-		}
-	}
+                hideLoadingInformations();
+            });
+        }
+    }
 
-	function loadOntologyFromUri(relativePath, requestedUri) {
-		fileToLoad=requestedUri;
-		var cachedOntology = cachedConversions[relativePath];
-		var trimmedRequestedUri = requestedUri.replace(/\/$/g, "");
-		var filename = trimmedRequestedUri.slice(trimmedRequestedUri.lastIndexOf("/") + 1);
+    function loadOntologyFromUri(relativePath, requestedUri) {
+        fileToLoad = requestedUri;
+        var cachedOntology = cachedConversions[relativePath];
+        var trimmedRequestedUri = requestedUri.replace(/\/$/g, "");
+        var filename = trimmedRequestedUri.slice(trimmedRequestedUri.lastIndexOf("/") + 1);
 
-		if (cachedOntology) {
-			loadOntologyFromText(cachedOntology, undefined, filename);
-			setLoadingStatus(true);
-		} else {
-			displayLoadingIndicators();
-			d3.xhr(relativePath, "application/json", function (error, request) {
-				var loadingSuccessful = !error;
-				var errorInfo;
+        if (cachedOntology) {
+            loadOntologyFromText(cachedOntology, undefined, filename);
+            setLoadingStatus(true);
+        } else {
+            displayLoadingIndicators();
+            d3.xhr(relativePath, "application/json", function(error, request) {
+                var loadingSuccessful = !error;
+                var errorInfo;
                 // console.log("Requestion XHR FUNCTION");
-				if (error!==null && error.status === 500) {
-					console.log(error);
+                if (error !== null && error.status === 500) {
+                    console.log(error);
                     console.log("HAS AN ERROR AND A STATUS");
-					hideLoadingInformations();
-				 	ontologyMenu.emptyGraphError();
-				 	return;
-				 }
+                    hideLoadingInformations();
+                    ontologyMenu.emptyGraphError();
+                    return;
+                }
 
 
 
-				var jsonText;
-				if (loadingSuccessful) {
-					jsonText = request.responseText;
-					cachedConversions[relativePath] = jsonText;
-				} else {
-					console.log("Something went wrong --.--");
-					if (error.status === 404) {
-						// check if this is file related and not owl2vowl converter connection error
-						// IRI parameter
-						var iriKey = "iri=";
-						var urlKey = "url=";
-						var fileKey = "file=";
+                var jsonText;
+                if (loadingSuccessful) {
+                    jsonText = request.responseText;
+                    cachedConversions[relativePath] = jsonText;
+                } else {
+                    console.log("Something went wrong --.--");
+                    if (error.status === 404) {
+                        // check if this is file related and not owl2vowl converter connection error
+                        // IRI parameter
+                        var iriKey = "iri=";
+                        var urlKey = "url=";
+                        var fileKey = "file=";
 
-						var hashParameter = location.hash.slice(1);
-						if (hashParameter.substr(0, fileKey.length) !== fileKey &&
-							hashParameter.substr(0, urlKey.length) !== urlKey &&
-							hashParameter.substr(0, iriKey.length) !== iriKey) {
-							// this is a file related error
-							ontologyMenu.emptyGraphError();
-						}
-						errorInfo = "Connection to the OWL2VOWL interface could not be established.";
-						graph.clearGraphData();
-					}
-				}
+                        var hashParameter = location.hash.slice(1);
+                        if (hashParameter.substr(0, fileKey.length) !== fileKey &&
+                            hashParameter.substr(0, urlKey.length) !== urlKey &&
+                            hashParameter.substr(0, iriKey.length) !== iriKey) {
+                            // this is a file related error
+                            ontologyMenu.emptyGraphError();
+                        }
+                        errorInfo = "Connection to the OWL2VOWL interface could not be established.";
+                        graph.clearGraphData();
+                    }
+                }
 
-				loadOntologyFromText(jsonText, undefined, filename);
-				setLoadingStatus(loadingSuccessful, error ? error.response : undefined, errorInfo);
+                loadOntologyFromText(jsonText, undefined, filename);
+                setLoadingStatus(loadingSuccessful, error ? error.response : undefined, errorInfo);
 
-				if (emptyGraph===true){
-					ontologyMenu.emptyGraphError();
-					graph.clearGraphData();
-				}
-				hideLoadingInformations();
-			});
-		}
-	}
+                if (emptyGraph === true) {
+                    ontologyMenu.emptyGraphError();
+                    graph.clearGraphData();
+                }
+                hideLoadingInformations();
+            });
+        }
+    }
 
-	ontologyMenu.emptyGraphError=function(){
+    ontologyMenu.emptyGraphError = function() {
 
-		emptyGraph=true;
-		loadingError.classed("hidden", false);
-		var errorInfo = d3.select("#error-info");
-		errorInfo.text("There is nothing to visualize.");
-		var description="There is no OWL input under the given IRI("+fileToLoad+"). Please try to load the OWL file directly.";
-		var descriptionMissing = !description;
-		var descriptionVisible = d3.select("#error-description-button").classed("hidden", descriptionMissing).datum().open;
-		d3.select("#error-description-container").classed("hidden", descriptionMissing || !descriptionVisible);
-		d3.select("#error-description").text((description));
-		graph.clearGraphData();
+        emptyGraph = true;
+        loadingError.classed("hidden", false);
+        var errorInfo = d3.select("#error-info");
+        errorInfo.text("There is nothing to visualize.");
+        var description = "There is no OWL input under the given IRI(" + fileToLoad + "). Please try to load the OWL file directly.";
+        var descriptionMissing = !description;
+        var descriptionVisible = d3.select("#error-description-button").classed("hidden", descriptionMissing).datum().open;
+        d3.select("#error-description-container").classed("hidden", descriptionMissing || !descriptionVisible);
+        d3.select("#error-description").text((description));
+        graph.clearGraphData();
 
-	};
+    };
 
-	ontologyMenu.notValidJsonURL=function(){
+    ontologyMenu.notValidJsonURL = function() {
 
-		emptyGraph=true;
-		loadingError.classed("hidden", false);
-		var errorInfo = d3.select("#error-info");
-		errorInfo.text("Invalid JSON URL");
-		var description="There is no JSON input under the given URL("+fileToLoad+"). Please try to load the JSON file directly.";
-		var descriptionMissing = !description;
-		var descriptionVisible = d3.select("#error-description-button").classed("hidden", descriptionMissing).datum().open;
-		d3.select("#error-description-container").classed("hidden", descriptionMissing || !descriptionVisible);
-		d3.select("#error-description").text((description));
-		graph.clearGraphData();
-	};
+        emptyGraph = true;
+        loadingError.classed("hidden", false);
+        var errorInfo = d3.select("#error-info");
+        errorInfo.text("Invalid JSON URL");
+        var description = "There is no JSON input under the given URL(" + fileToLoad + "). Please try to load the JSON file directly.";
+        var descriptionMissing = !description;
+        var descriptionVisible = d3.select("#error-description-button").classed("hidden", descriptionMissing).datum().open;
+        d3.select("#error-description-container").classed("hidden", descriptionMissing || !descriptionVisible);
+        d3.select("#error-description").text((description));
+        graph.clearGraphData();
+    };
 
-	ontologyMenu.notValidJsonFile=function(){
+    ontologyMenu.notValidJsonFile = function() {
 
-		emptyGraph=true;
-		loadingError.classed("hidden", false);
-		var errorInfo = d3.select("#error-info");
-		errorInfo.text("Invalid JSON file");
-		var description="The uploaded file is not a valid JSON file. ("+fileToLoad+")";
-		var descriptionMissing = !description;
-		var descriptionVisible = d3.select("#error-description-button").classed("hidden", descriptionMissing).datum().open;
-		d3.select("#error-description-container").classed("hidden", descriptionMissing || !descriptionVisible);
-		d3.select("#error-description").text((description));
-		graph.clearGraphData();
+        emptyGraph = true;
+        loadingError.classed("hidden", false);
+        var errorInfo = d3.select("#error-info");
+        errorInfo.text("Invalid JSON file");
+        var description = "The uploaded file is not a valid JSON file. (" + fileToLoad + ")";
+        var descriptionMissing = !description;
+        var descriptionVisible = d3.select("#error-description-button").classed("hidden", descriptionMissing).datum().open;
+        d3.select("#error-description-container").classed("hidden", descriptionMissing || !descriptionVisible);
+        d3.select("#error-description").text((description));
+        graph.clearGraphData();
 
-	};
+    };
 
-	function setupConverterButtons() {
-		var iriConverterButton = d3.select("#iri-converter-button");
-		var iriConverterInput = d3.select("#iri-converter-input");
+    function setupConverterButtons() {
+        var iriConverterButton = d3.select("#iri-converter-button");
+        var iriConverterInput = d3.select("#iri-converter-input");
 
-		iriConverterInput.on("input", function () {
-			keepOntologySelectionOpenShortly();
+        iriConverterInput.on("input", function() {
+            keepOntologySelectionOpenShortly();
 
-			var inputIsEmpty = iriConverterInput.property("value") === "";
-			iriConverterButton.attr("disabled", inputIsEmpty || undefined);
-		}).on("click", function () {
-			keepOntologySelectionOpenShortly();
-		});
+            var inputIsEmpty = iriConverterInput.property("value") === "";
+            iriConverterButton.attr("disabled", inputIsEmpty || undefined);
+        }).on("click", function() {
+            keepOntologySelectionOpenShortly();
+        });
 
-		d3.select("#iri-converter-form").on("submit", function () {
-			var inputName=iriConverterInput.property("value");
+        d3.select("#iri-converter-form").on("submit", function() {
+            var inputName = iriConverterInput.property("value");
 
-			// remove first spaces
-			var clearedName=inputName.replace(/%20/g," ");
-			while (clearedName.beginsWith(" ")){
-				clearedName=clearedName.substr(1,clearedName.length);
-			}
-			// remove ending spaces
-			while (clearedName.endsWith(" ")){
-				clearedName=clearedName.substr(0,clearedName.length-1);
-			}
-			// check if iri is actually an url for a json file (ends with .json)
-			// create lowercase filenames;
-			inputName=clearedName;
-			var lc_iri=inputName.toLowerCase();
-			if (lc_iri.endsWith(".json")) {
-			 	console.log("file is an URL for a json ");
-				location.hash = "url=" + inputName;
-				iriConverterInput.property("value", "");
-				iriConverterInput.on("input")();
-			} else {
-				location.hash = "iri=" + inputName;
-				iriConverterInput.property("value", "");
-				iriConverterInput.on("input")();
-			}
+            // remove first spaces
+            var clearedName = inputName.replace(/%20/g, " ");
+            while (clearedName.beginsWith(" ")) {
+                clearedName = clearedName.substr(1, clearedName.length);
+            }
+            // remove ending spaces
+            while (clearedName.endsWith(" ")) {
+                clearedName = clearedName.substr(0, clearedName.length - 1);
+            }
+            // check if iri is actually an url for a json file (ends with .json)
+            // create lowercase filenames;
+            inputName = clearedName;
+            var lc_iri = inputName.toLowerCase();
+            if (lc_iri.endsWith(".json")) {
+                console.log("file is an URL for a json ");
+                location.hash = "url=" + inputName;
+                iriConverterInput.property("value", "");
+                iriConverterInput.on("input")();
+            } else {
+                location.hash = "iri=" + inputName;
+                iriConverterInput.property("value", "");
+                iriConverterInput.on("input")();
+            }
 
-			// abort the form submission because we set the hash parameter manually to prevent the ? attached in chrome
-			d3.event.preventDefault();
-			return false;
-		});
-	}
+            // abort the form submission because we set the hash parameter manually to prevent the ? attached in chrome
+            d3.event.preventDefault();
+            return false;
+        });
+    }
 
-	function setupUploadButton() {
-		var input = d3.select("#file-converter-input"),
-			inputLabel = d3.select("#file-converter-label"),
-			uploadButton = d3.select("#file-converter-button");
+    function setupUploadButton() {
+        var input = d3.select("#file-converter-input"),
+            inputLabel = d3.select("#file-converter-label"),
+            uploadButton = d3.select("#file-converter-button");
 
-		input.on("change", function () {
-			var selectedFiles = input.property("files");
-			if (selectedFiles.length <= 0) {
-				inputLabel.text("Select ontology file");
-				uploadButton.property("disabled", true);
-			} else {
-				inputLabel.text(selectedFiles[0].name);
-				uploadButton.property("disabled", false);
+        input.on("change", function() {
+            var selectedFiles = input.property("files");
+            if (selectedFiles.length <= 0) {
+                inputLabel.text("Select ontology file");
+                uploadButton.property("disabled", true);
+            } else {
+                inputLabel.text(selectedFiles[0].name);
+                uploadButton.property("disabled", false);
 
-				keepOntologySelectionOpenShortly();
-			}
-		});
+                keepOntologySelectionOpenShortly();
+            }
+        });
 
-		uploadButton.on("click", function () {
-			var selectedFile = input.property("files")[0];
-			if (!selectedFile) {
-				return false;
-			}
-			var newHashParameter = "file=" + selectedFile.name;
-			// Trigger the reupload manually, because the iri is not changing
-			if (location.hash === "#" + newHashParameter) {
-				loadOntologyFromFile();
-			} else {
-				location.hash = newHashParameter;
-			}
-		});
-	}
+        uploadButton.on("click", function() {
+            var selectedFile = input.property("files")[0];
+            if (!selectedFile) {
+                return false;
+            }
+            var newHashParameter = "file=" + selectedFile.name;
+            // Trigger the reupload manually, because the iri is not changing
+            if (location.hash === "#" + newHashParameter) {
+                loadOntologyFromFile();
+            } else {
+                location.hash = newHashParameter;
+            }
+        });
+    }
 
-	function loadOntologyFromFile(filename) {
-		var cachedOntology = cachedConversions[filename];
-		if (cachedOntology) {
-			displayLoadingIndicators();
-			loadOntologyFromText(cachedOntology, filename);
-			setLoadingStatus(true);
-			if (emptyGraph===true){
-				ontologyMenu.emptyGraphError();
-			}
-			hideLoadingInformations();
-			return;
-		}
+    function loadOntologyFromFile(filename) {
+        var cachedOntology = cachedConversions[filename];
+        if (cachedOntology) {
+            displayLoadingIndicators();
+            loadOntologyFromText(cachedOntology, filename);
+            setLoadingStatus(true);
+            if (emptyGraph === true) {
+                ontologyMenu.emptyGraphError();
+            }
+            hideLoadingInformations();
+            return;
+        }
 
-		var selectedFile = d3.select("#file-converter-input").property("files")[0];
-		// No selection -> this was triggered by the iri. Unequal names -> reuploading another file
-		if (!selectedFile || (filename && (filename !== selectedFile.name))) {
-			loadOntologyFromText(undefined, undefined);
-			setLoadingStatus(false, undefined, "No cached version of \"" + filename + "\" was found. Please reupload the file.");
-			graph.clearGraphData();
-			return;
-		} else {
-			filename = selectedFile.name;
-		}
+        var selectedFile = d3.select("#file-converter-input").property("files")[0];
+        // No selection -> this was triggered by the iri. Unequal names -> reuploading another file
+        if (!selectedFile || (filename && (filename !== selectedFile.name))) {
+            loadOntologyFromText(undefined, undefined);
+            setLoadingStatus(false, undefined, "No cached version of \"" + filename + "\" was found. Please reupload the file.");
+            graph.clearGraphData();
+            return;
+        } else {
+            filename = selectedFile.name;
+        }
 
-		if (filename.match(/\.json$/)) {
-			displayLoadingIndicators();
-			loadFromJson(selectedFile, filename);
-		} else {
-			loadFromOntology(selectedFile, filename,true);
-		}
-	}
+        if (filename.match(/\.json$/)) {
+            displayLoadingIndicators();
+            loadFromJson(selectedFile, filename);
+        } else {
+            loadFromOntology(selectedFile, filename, true);
+        }
+    }
 
-	function loadFromJson(file, filename) {
-		var reader = new FileReader();
-		reader.readAsText(file);
-		reader.onload = function () {
-			displayLoadingIndicators();
-			loadOntologyFromTextAndTrimFilename(reader.result, filename);
-			setLoadingStatus(true);
-			if (emptyGraph===true){
-				ontologyMenu.emptyGraphError();
-			}
-			hideLoadingInformations();
-		};
-	}
+    function loadFromJson(file, filename) {
+        var reader = new FileReader();
+        reader.readAsText(file);
+        reader.onload = function() {
+            displayLoadingIndicators();
+            loadOntologyFromTextAndTrimFilename(reader.result, filename);
+            setLoadingStatus(true);
+            if (emptyGraph === true) {
+                ontologyMenu.emptyGraphError();
+            }
+            hideLoadingInformations();
+        };
+    }
 
-	function loadFromOntology(selectedFile, filename, fromFile) {
-		var uploadButton = d3.select("#file-converter-button");
+    function loadFromOntology(selectedFile, filename, fromFile) {
+        var uploadButton = d3.select("#file-converter-button");
 
-		displayLoadingIndicators();
-		uploadButton.property("disabled", true);
+        displayLoadingIndicators();
+        uploadButton.property("disabled", true);
 
-		var formData = new FormData();
-		formData.append("ontology", selectedFile);
-		var xhr = new XMLHttpRequest();
+        var formData = new FormData();
+        formData.append("ontology", selectedFile);
+        var xhr = new XMLHttpRequest();
 
-		xhr.open("POST", "convert", true);
-		xhr.onload = function () {
-			uploadButton.property("disabled", false);
+        xhr.open("POST", "convert", true);
+        xhr.onload = function() {
+            uploadButton.property("disabled", false);
 
-			if (xhr.status === 200) {
-				loadOntologyFromTextAndTrimFilename(xhr.responseText, filename);
-				cachedConversions[filename] = xhr.responseText;
-			} else {
-				loadOntologyFromText(undefined, undefined);
-				setLoadingStatus(false, xhr.responseText);
-				hideLoadingInformations();
-				graph.clearGraphData();
+            if (xhr.status === 200) {
+                loadOntologyFromTextAndTrimFilename(xhr.responseText, filename);
+                cachedConversions[filename] = xhr.responseText;
+            } else {
+                loadOntologyFromText(undefined, undefined);
+                setLoadingStatus(false, xhr.responseText);
+                hideLoadingInformations();
+                graph.clearGraphData();
 
-			}
-			hideLoadingInformations();
-			if (emptyGraph===true && fromFile===true){
-				console.log("Failed to convert the file");
-				cachedConversions[filename]=undefined;
-				ontologyMenu.notValidJsonFile();
-			}
-		};
-		xhr.send(formData);
-	}
+            }
+            hideLoadingInformations();
+            if (emptyGraph === true && fromFile === true) {
+                console.log("Failed to convert the file");
+                cachedConversions[filename] = undefined;
+                ontologyMenu.notValidJsonFile();
+            }
+        };
+        xhr.send(formData);
+    }
 
-	function loadOntologyFromTextAndTrimFilename(text, filename) {
-		var trimmedFilename = filename.split(".")[0];
-		loadOntologyFromText(text, trimmedFilename);
-	}
+    function loadOntologyFromTextAndTrimFilename(text, filename) {
+        var trimmedFilename = filename.split(".")[0];
+        loadOntologyFromText(text, trimmedFilename);
+    }
 
-	function keepOntologySelectionOpenShortly() {
-		// Events in the menu should not be considered
-		var ontologySelection = d3.select("#select .toolTipMenu");
-		ontologySelection.on("click", function () {
-			d3.event.stopPropagation();
-		}).on("keydown", function () {
-			d3.event.stopPropagation();
-		});
+    function keepOntologySelectionOpenShortly() {
+        // Events in the menu should not be considered
+        var ontologySelection = d3.select("#select .toolTipMenu");
+        ontologySelection.on("click", function() {
+            d3.event.stopPropagation();
+        }).on("keydown", function() {
+            d3.event.stopPropagation();
+        });
 
-		ontologySelection.style("display", "block");
+        ontologySelection.style("display", "block");
 
-		function disableKeepingOpen() {
-			ontologySelection.style("display", undefined);
+        function disableKeepingOpen() {
+            ontologySelection.style("display", undefined);
 
-			clearTimeout(ontologyMenuTimeout);
-			d3.select(window).on("click", undefined).on("keydown", undefined);
-			ontologySelection.on("mouseover", undefined);
-		}
+            clearTimeout(ontologyMenuTimeout);
+            d3.select(window).on("click", undefined).on("keydown", undefined);
+            ontologySelection.on("mouseover", undefined);
+        }
 
-		// Clear the timeout to handle fast calls of this function
-		clearTimeout(ontologyMenuTimeout);
-		ontologyMenuTimeout = setTimeout(function () {
-			disableKeepingOpen();
-		}, 3000);
+        // Clear the timeout to handle fast calls of this function
+        clearTimeout(ontologyMenuTimeout);
+        ontologyMenuTimeout = setTimeout(function() {
+            disableKeepingOpen();
+        }, 3000);
 
-		// Disable forced open selection on interaction
-		d3.select(window).on("click", function () {
-			disableKeepingOpen();
-		}).on("keydown", function () {
-			disableKeepingOpen();
-		});
+        // Disable forced open selection on interaction
+        d3.select(window).on("click", function() {
+            disableKeepingOpen();
+        }).on("keydown", function() {
+            disableKeepingOpen();
+        });
 
-		ontologySelection.on("mouseover", function () {
-			disableKeepingOpen();
-		});
-	}
+        ontologySelection.on("mouseover", function() {
+            disableKeepingOpen();
+        });
+    }
 
 
-	function displayLoadingIndicators() {
-		loadingError.classed("hidden", true);
-		loadingProgress.classed("hidden", false);
-	}
+    function displayLoadingIndicators() {
+        loadingError.classed("hidden", true);
+        loadingProgress.classed("hidden", false);
+    }
 
-	function setLoadingStatus(success, description, information) {
-		loadingError.classed("hidden", success);
+    function setLoadingStatus(success, description, information) {
+        loadingError.classed("hidden", success);
 
-		var errorInfo = d3.select("#error-info");
-		if (information) {
-			errorInfo.text(information);
-		} else {
-			errorInfo.html("Ontology could not be loaded.<br>Is it a valid OWL ontology? Please check with <a target=\"_blank\"" +
-			"href=\"http://visualdataweb.de/validator/\">OWL Validator</a>.");
-		}
+        var errorInfo = d3.select("#error-info");
+        if (information) {
+            errorInfo.text(information);
+        } else {
+            errorInfo.html("Ontology could not be loaded.<br>Is it a valid OWL ontology? Please check with <a target=\"_blank\"" +
+                "href=\"http://visualdataweb.de/validator/\">OWL Validator</a>.");
+        }
 
-		var descriptionMissing = !description;
-		var descriptionVisible = d3.select("#error-description-button").classed("hidden", descriptionMissing).datum().open;
-		d3.select("#error-description-container").classed("hidden", descriptionMissing || !descriptionVisible);
-		d3.select("#error-description").text(unescape(description));
-	}
+        var descriptionMissing = !description;
+        var descriptionVisible = d3.select("#error-description-button").classed("hidden", descriptionMissing).datum().open;
+        d3.select("#error-description-container").classed("hidden", descriptionMissing || !descriptionVisible);
+        d3.select("#error-description").text(unescape(description));
+    }
 
-	function hideLoadingInformations() {
-		loadingProgress.classed("hidden", true);
-	}
+    function hideLoadingInformations() {
+        loadingProgress.classed("hidden", true);
+    }
 
-	return ontologyMenu;
+    return ontologyMenu;
 };

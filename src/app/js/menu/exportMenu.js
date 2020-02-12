@@ -20,6 +20,7 @@ module.exports = function(graph) {
      * Adds the export button to the website.
      */
     exportMenu.setup = function() {
+        debugger;
         exportSvgButton = d3.select("#exportSvg")
             .on("click", exportSvg);
         exportJsonButton = d3.select("#exportJson")
@@ -29,6 +30,8 @@ module.exports = function(graph) {
             .on("click", copyUrl);
 
         exportTurtleButton = d3.select("#exportTurtle")
+            .on("click", exportTurtle);
+        exportTurtleButton = d3.select("#c_exportTurtle")
             .on("click", exportTurtle);
 
         var menuEntry = d3.select("#m_export");

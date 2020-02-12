@@ -64,7 +64,8 @@
 					<option value="#sioc">Friend of a Friend (FOAF) vocabulary</option>
 					<option value="#ontovibe">Friend of a Friend (FOAF) vocabulary</option>
 					<option value="#empty">Create new Ontology (empty)</option>
-				</select>
+                </select>
+                <a href="#" style="display: none;" id="select_store_link"></a>
             </div>
             <div id="graph"></div>
 
@@ -207,18 +208,20 @@
 						</i>
                         <input class="searchInputText" type="text" id="search-input-text" placeholder="Search">
                     </li>
-                    <li id="c_locate">
+                    <li style="display: none;" id="c_locate">
                         <a draggable="false" title="Nothing to locate, enter search term." href="#" id="locateSearchResult">&#8982;
 						</a>
                     </li>
-                    <li id="c_select"><a draggable="false" href="#">Ontology</a></li>
-                    <li id="c_export"><a draggable="false" href="#">Export</a></li>
-                    <li id="c_filter"><a draggable="false" href="#">Filter</a></li>
-                    <li id="c_modes"><a draggable="false" href="#">Modes</a></li>
-                    <li id="c_reset"><a draggable="false" id="reset-button" href="#" type="reset">Reset</a></li>
-                    <li id="c_pause"><a draggable="false" id="pause-button" href="#">Pause</a></li>
-                    <li id="c_config"><a draggable="false" href="#">Options</a>
-                        <li id="c_about"><a draggable="false" href="#">About</a></li>
+                    <li style="display: none;" id="c_select"><a draggable="false" href="#">Ontology</a></li>
+                    <li style="display: none;" id="c_export"><a draggable="false" href="#">Export</a></li>
+                    <li style="display: none;" id="c_filter"><a draggable="false" href="#">Filter</a></li>
+                    <li style="display: none;" id="c_modes"><a draggable="false" href="#">Modes</a></li>
+                    <li style="display: none;" id="c_reset"><a draggable="false" id="reset-button" href="#" type="reset">Reset</a></li>
+                    <li style="display: none;" id="c_pause"><a draggable="false" id="pause-button" href="#">Pause</a></li>
+                    <li style="display: none;" id="c_config"><a draggable="false" href="#">Options</a>
+                        <li style="display: none;" id="c_about"><a draggable="false" href="#">About</a></li>
+                        <li><a href="#" id="c_exportTurtle">Export as TTL</a></li>
+                        <li><a href="#" id="c_SaveToFuseki">Save to Fuseki</a></li>
                 </ul>
 
             </div>
