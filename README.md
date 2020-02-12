@@ -6,7 +6,7 @@ It extends WebVOWL with visual modeling functionality.
  
 User Interface Overview
 ------------------------
-![alt text](./overviewImage.png)
+![alt text](./webvowl0.gif)
 
 1) Collapsible sidebar for default element selection 
 2) Message dialog box
