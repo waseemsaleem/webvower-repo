@@ -1,0 +1,257 @@
+[DONE] Add Config Menu 
+	-> Show zoomSlider Option
+
+[DONE]  Add Animation for dynamic label width
+    [done for properties]>> static -> dynamic : on animation end change labelContent
+    [done for properties]>> dynamic-> static  : change labelContent start animation
+
+    [done for nodes]>> static -> dynamic : on animation end change labelContent
+    [done nodes]>> dynamic-> static  : change labelContent start animation
+
+    [DONE](MID PRIORITY)search for better solution to update the label content text
+    [DONE] (LOW PRIORITY) add max label width slider to config menu
+
+
+
+[DONE] Overwrite Double Click and double Tab
+   [DONE] add mode of operation string
+   [DONE] add EditMode to Options/ or Modes (Experimental)
+   [DONE] add handler for different edit modes
+   [DONE] add Node Creation on DoubleClick [WORKS], add node on DoubleTap [DONE]
+
+[DONE] Add "empty" Ontology and Editor hints
+   [DONE] Add Empty Ontology file and Ontology Line Item
+   [DONE] Add Editor hint
+
+[DONE] ADD SHOW EDITOR HINT
+
+
+[DONE] Add Visual Editor Elements
+   [DONE] Dragger Arrow
+   [DONE] Add Datatype property
+   [DONE] remove element
+   [DONE] Visual Elements for Properties
+
+[DONE] Add creation and delete function
+   [DONE] Add CreateNewObjectProperty Function
+   [DONE] Add CreateNewDatatype Function
+   [DONE] Add Removal Function
+
+
+[DONE]
+    [DONE] Fix Dynamic Label Width for rectangular nodes
+
+[DONE]
+    [DONE] Add Text label Edit functions for nodes      (dblClick)
+    [DONE] Add Text label Edit functions for Properties (dblClick)
+    [DONE] Improve name Changer (also for the IRI)
+
+[DONE]
+    [DONE] Add Visual elements for selection of Property // << domain range changer
+    [DONE] Positioning and dragging range modifier
+    [DONE] Add visual handling for range modifier (drag a shadow clone of the property)
+    [DONE] Positioning and dragging Domain modifier
+    [DONE] Add visual handling for Domain modifier (drag a shadow clone of the property)
+
+
+
+
+[DONE] swap between editor and view mode for right sidebar
+
+
+[TODO] Right Sidebar Elements
+   [DONE] Ontology MetaData
+        [Done] Title Editor
+        [Done] IRI Editor
+        [Done] Version
+        [Done] Authors
+        [DONE] Prefix
+           -> [Done] add buttons for edit and delete
+           -> [Done]edit enables the element
+        [--] Language
+            -> add language button + lang selection
+        [DONE] add adjust size for the elements
+        [DONE] add adjust size for prefixes
+
+    [] Add Accordion Object (static elements in the html)
+       // Maybe reorganize the editor information !<<
+       -> [DONE] Description
+       -> [ SKIP ]MetaData  // << Keep editor sidebar slim
+       -> [ SKIP ]Statistics // << Keep editor sidebar slim
+       -> Selection Details
+            [DONE] handle iri change and prefixed representation
+            [DONE] handle label changes
+            [DONE] handle type changes
+            [DONE] datatype >> e.g rdfs:Datatype >> xsd:integer
+
+
+
+
+[DONE] position of the collapse button for leftSidebar
+
+[DONE] Add Left sidebar
+ [DONE] create left side bar when editMode
+ [DONE] collapse element
+ [DONE] accordions for different element (classes, properties)
+
+
+
+[DONE] Node and Property Characteristics handling
+    [DONE] Node Characteristics (means deprecated toggle option and external attribute span)
+    [DONE] Property Characteristics (external[done], deprecated[done], and functional etc...)
+
+[DONE] Domain Range Changer (Visual Elements and Shadow Clones of properties
+
+[DONE] on domain/range update set the position of the property to new centered position
+
+[DONE] enable domain dragger for datatypePoroperties
+
+[DONE] property blur bug
+
+[DONE] add GENERAL Ontology Values in the input boxes
+
+[DONE] Handle position of domain range dragger for loops;
+
+
+
+[DONE] Bug selection of existing Properties does not show range/base dragger
+
+
+
+[DONE] Header Title text for edit sidebar and default creation element
+[DONE] Add change default names only
+[DONE] adjust dropdown menu size
+[DONE] Add spaces between accordions (using margin-bot : 5px)
+[DONE] Change Visual Elements
+[DONE] added default constructors for some and all values from
+[DONE] Draw Property Drager ono Hover? >> config Option
+[DONE] Warning Message Box and its Handler
+
+
+
+[WORK-AROUND] the text should be also complied with the prefixes loaded into the ontology
+    --> do not allow to remove rdfs, owl, xsd prefixes
+
+*****
+[DONE] Fixed leftsidebar hidding behavior
+    (Switching between edit and show mode saves the users preference for showing or hiding the left sidebar)
+[DONE] Fixed prefix input Width
+[DONE] do not allow to remove rdfs, owl, xsd prefixes
+       Fixed hover elements title
+       Added Title to IRI of prefix
+       Fixed Add Prefix button behavior
+         -> press add prefix > it changes name to save prefix and allwos to execute save (same as the check element)
+[DONE] Default message Box for warning
+
+
+***
+[DONE] fixed switching between edit and show mode
+  -> now removes all edit visual elments ;
+[DONE] fixed domain dragger rendering Element
+[DONE] merged Editor warnings and Editor Hint
+[DONE] Added Animation
+[DONE] Introducing Darth Bane (prevents users from doing something when input is needed)
+
+
+[DONE] external element identification
+
+[DONE] Handle Delete of InverseOf Property Containers
+   -> possible option ( selecting the container provides the option of split (remove inverseOf statement)
+   -> delete upper element would also delete the inverse option >> throw warning
+
+[DONE] Shadow Clone handling for inverse properties
+[DONE] Shadow Clone copy arrow Head Marker and also set position of
+
+
+[Fixed] Inverse property Killer
+[DONE] inverse Delete element Position somehow wrong;
+[DONE] fix labelObejct things
+
+[Questions]
+  [] do we allow to have spaces in iri or
+    should this directly  replaced by _
+
+  [] All and exist possible as loops?
+  [] Datatypeproperties Characteristics? << only functional?
+
+
+
+
+
+[DONE] Fix Export As SVG
+   -> Editing Elements are somehow now opac; >> lazyRefresh() >> just redraw things
+
+[TODO] Export as JSON
+     -> oldVersion was just reading the input file and added some annotations to it;
+     -> now we need also to add the edited information;
+     -> Most important would be here the meta information (the rest should work out of the box)
+
+
+[DONE] sanity check for domain and range drager
+   -> you can still create a loop for subclasses by using domain and range dragger
+
+
+[DONE] datatypeProperty allow only deprecated and functional characteristics
+[FIXED] external element identification
+
+[DONE] force label iri sync in the right sidebar, when element has default iri
+
+
+[TODO] todo touch device testing
+[TODO] MultiColoring for external elements? << tests and so
+
+[DONE] check for subclass stuff;
+[DONE] sanity check (does triple exist)
+[DONE] owl Class IRI verification > added show other element button!
+[DONE] property  IRI verification > similar to owl class
+[TODO] Warning module text, overflows of its maximal width -.-
+    -> it seems my phone detects an url and does not want to break it down ... << need new approach
+
+[TODO] add svg icons for all meny entries (also in the prefix menu!)
+// basically trust no one to be able handle utf symbols!
+--> darth berserker approves
+
+
+[Done] mobile device behaviour. (// remove hovered element class)
+
+-------------------------------------------High PRIORITY-----------------------------------------------------------------
+    [] Prevent same definition of a Resources (e.g same named classes)
+    [] How are properties handled with different multiple domain and ranges?
+[TODO]
+    On mobile devices, handling the height, should not change the graph height
+    but translate the graph a bit (this should help to keep the nodes from runnig away when keyboard is poped up)
+
+
+-------------------------------------------MID PRIORITY-----------------------------------------------------------------
+    [] Prevent Multiple creation of subclasses between A -> B
+    [] Allow shortCut A sco B and B sco A >> A isEquivalent B (create equi class and merge)
+    [] Add Equivalent Class and Property to default types
+    [DONE] Add backup label variable, when switching between types (e.g class-> thing -> class)
+    [] Change position of the property hoverElement when it is hovered but label changed in sidebar.
+
+
+
+-------------------------------------------TESTS -----------------------------------------------------------------
+    [] Touch devices
+    [] test on Iphone
+    [] Test on IE -> EDGE
+
+
+
+
+-------------------------------------------LOW PRIORITY-----------------------------------------------------------------
+[ ] add editor mode to options object << set flag via uri
+       // this should be used later for the reviewers calling empty ontology with
+       // editor mode enabled directly
+
+[ ]  add min label width slider to config menu << ASK STEFFEN ABOUT HIS OPINION FOR THIS
+[IN-WORK] MAKE BETTER VISUAL ELEMENTS FOR RANGE AND DOMAIN DRAGGER
+  -> Range Dragger same element as for class dragger
+  -> Domain Dragger looks a bit ugly ...
+
+[DONE] add metadata ontology information;
+
+[TODO] >> handler solitary subclass filter
+
+[TODO ] LeftSidebar: Add Visual Representations for the Elements on hover ( show VOWL spec description )
+     --> add toggle option to show visual and spec definitions
